@@ -4,3 +4,5 @@ sail-riscv
 sail_cSim
 spike
 config.ini
+riscv-gnu-toolchain
+riscof_work
