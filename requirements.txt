@@ -1,0 +1,2 @@
+git+https://github.com/riscv/riscof.git
+git+https://github.com/riscv-non-isa/riscv-arch-test/#subdirectory=riscv-isac
