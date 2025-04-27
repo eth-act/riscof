@@ -1,3 +1,6 @@
 .venv
 sail
 sail-riscv
+sail_cSim
+spike
+config.ini
