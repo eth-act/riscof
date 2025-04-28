@@ -31,3 +31,20 @@ The format in the template file you were using was outdated, or
 The RISCV_Config schema has changed between versions.
 Now your validation is working correctly, and you can proceed with using RISCOF for your RISC-V testing.
 ```
+
+Python error on missing signature file resolved by resetting to a commit prior to 17cfdec13b99e61da9fdf8c32d21b33e008bd82d (prior commit is 03ceb5ba24e88c82a0bbe0c776afb8702057e81a) which changed some CLI flags.
+
+
+
+
+Accidentally created 500GB of logs. Needed to update a line in `sail_cSim/riscof_sail_cSim.py` to 
+```
+execute += self.sail_exe[self.xlen] + '  -i -v --trace=step {0} --ram-size=1024M --signature-granularity=8  --test-signature={1} {2} > {3}.log 2>&1;'.format(pmp_flags, sig_file, elf, test_name)
+```
+(it was assuming 8TB of ram?)
+
+and also add lines in the `config.ini`
+```
+ispec=/home/cody/share/work/zkVMs/riscof/spike/spike_isa.yaml
+pspec=/home/cody/share/work/zkVMs/riscof/spike/spike_platform.yaml
+```
