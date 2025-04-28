@@ -39,9 +39,9 @@ Python error on missing signature file resolved by resetting to a commit prior t
 
 Accidentally created 500GB of logs. Needed to update a line in `sail_cSim/riscof_sail_cSim.py` to 
 ```
-execute += self.sail_exe[self.xlen] + '  -i -v --trace=step {0} --ram-size=1024M --signature-granularity=8  --test-signature={1} {2} > {3}.log 2>&1;'.format(pmp_flags, sig_file, elf, test_name)
+            execute += self.sail_exe[self.xlen] + '  -i -v {0} --signature-granularity=4 --test-signature={1} {2} > {3}.log 2>&1;'.format(pmp_flags, sig_file, elf, test_name)
 ```
-(it was assuming 8TB of ram?)
+(remove ram field to match `riscof/spike/riscof_spike.py`ure)
 
 and also add lines in the `config.ini`
 ```
