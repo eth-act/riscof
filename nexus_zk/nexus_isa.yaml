@@ -1,13 +1,13 @@
 hart_ids:
   - 0
 hart0:
-  ISA: RV32IMC
+  ISA: RV32IM
   physical_addr_sz: 32
   User_Spec_Version: '2.3'
   supported_xlen:
     - 32
   misa:
-    reset-val: 1073746180
+    reset-val: 0x40001100  # 32-bit (0x40000000) + I (0x00000100) + M (0x00001000)
     rv32:
       accessible: true
       mxl:
@@ -25,7 +25,7 @@ hart0:
           warl:
             dependency_fields: []
             legal:
-              - extensions[25:0] bitmask [0x0001104, 0x0000000]
+              - extensions[25:0] bitmask [0x0001100, 0x0000000]  # Only I and M bits set
             wr_illegal:
               - Unchanged
   hw_data_misaligned_support: false
