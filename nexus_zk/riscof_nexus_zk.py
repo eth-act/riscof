@@ -136,7 +136,7 @@ class nexus_zk(pluginTemplate):
 
             # Run the Nexus zkVM emulator
             # Using the execute command from the CLI
-            execute += f"{self.dut_exe} execute {elf} --signature={sig_file} --signature-granularity=4 > {test_name}.log 2>&1 || true;"
+            execute += f"{self.dut_exe} execute {elf} --signature={sig_file} --signature-granularity=4 > {test_name}.log 2>&1;"
 
             cov_str = ' '
             for label in testentry['coverage_labels']:
@@ -160,6 +160,7 @@ class nexus_zk(pluginTemplate):
             else:
                 coverage_cmd = ''
 
+            print(f"execute command: {execute}")
             execute += coverage_cmd
 
             make.add_target(execute)

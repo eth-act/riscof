@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug Nexus Execute",
+            "program": "${workspaceFolder}/nexus-zkvm/target/debug/cargo-nexus",
+            "args": ["nexus", "execute", "${workspaceFolder}/nexus-zkvm/vm/test/fib_10.elf", "--signature=test.sig"],
+            // "args": ["nexus", "execute", "${workspaceFolder}/riscof_work/rv32i_m/I/src/add-01.S/dut/ref.elf", "--signature=test.sig"],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_BACKTRACE": "1"
+            },
+            "sourceLanguages": ["rust"]
+        }
+    ]
+}
