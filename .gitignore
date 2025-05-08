@@ -3,6 +3,5 @@ toolchains/gcc-riscv
 toolchains/sail-lang
 emulators/sail-riscv
 emulators/spike
-plugins/sail_cSim/__pycache__
-plugins/spike/__pycache__
+plugins/**/__pycache__
 riscof_work

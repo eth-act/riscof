@@ -1,0 +1,34 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build r0vm",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}/emulators/risc0 && RUSTFLAGS=\"-C debuginfo=2\" cargo build -p risc0-r0vm",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": [
+                "$rustc"
+            ]
+        },
+        {
+            "label": "clean build r0vm",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}/emulators/risc0 && cargo clean && RUSTFLAGS=\"-C debuginfo=2\" cargo build -p risc0-r0vm",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": [
+                "$rustc"
+            ]
+        }
+    ]
+} 
