@@ -1,0 +1,3 @@
+[submodule "emulators/risc0"]
+	path = emulators/risc0
+	url = git@github.com:codygunton/risc0.git
