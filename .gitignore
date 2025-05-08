@@ -1,9 +1,9 @@
 .venv
-sail
-sail-riscv
-sail_cSim
-spike
+toolchains/gcc-riscv
+toolchains/sail-lang
+emulators/sail-riscv
+emulators/spike
+plugins/sail_cSim
+plugins/spike
 config.ini
-riscv-gnu-toolchain
 riscof_work
-riscv-isa-sim-1.1.0

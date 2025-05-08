@@ -1,10 +1,14 @@
 #!/bin/bash
 
+set -eu
+
+BASE_DIR=$PWD
+
 # Set up paths
-PATH=$PATH:$PWD/riscv-gnu-toolchain/bin/
-PATH=$PATH:$PWD/sail/bin
-PATH=$PATH:$PWD/sail-riscv/build/c_emulator
-PATH=$PATH:$PWD/riscv-isa-sim/build
+PATH=$PATH:$BASE_DIR/toolchains/gcc-riscv/bin/
+PATH=$PATH:$BASE_DIR/toolchains/sail-lang/bin/
+PATH=$PATH:$BASE_DIR/emulators/sail-riscv/build/c_emulator
+PATH=$PATH:$BASE_DIR/emulators/spike/install/bin
 
 # Activate the Python environment
 if [ -d ".venv" ]; then
@@ -37,5 +41,5 @@ if [ $? -eq 124 ]; then
     echo "Error: Tests timed out after 30 minutes. There might be an infinite loop in the test execution."
     exit 1
 else
-    echo "Tests completed"
+    echo "Tests completed successfully!"
 fi 
