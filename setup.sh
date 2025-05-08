@@ -94,17 +94,17 @@ if [ ! -d "plugins/spike" ] || [ ! -d "plugins/sail_cSim" ]; then
     # Setup plugins directory
     mkdir -p plugins
     
-    # Initialize plugins
-    riscof setup --dutname=spike
+    # # Initialize plugins
+    # riscof setup --dutname=spike
     
-    # Move plugins to the correct location if they're not there already
-    if [ -d "spike" ] && [ ! -d "plugins/spike" ]; then
-        mv spike plugins/
-    fi
+    # # Move plugins to the correct location if they're not there already
+    # if [ -d "spike" ] && [ ! -d "plugins/spike" ]; then
+    #     mv spike plugins/
+    # fi
     
-    if [ -d "sail_cSim" ] && [ ! -d "plugins/sail_cSim" ]; then
-        mv sail_cSim plugins/
-    fi
+    # if [ -d "sail_cSim" ] && [ ! -d "plugins/sail_cSim" ]; then
+    #     mv sail_cSim plugins/
+    # fi
     
     # Clone arch-test repository
     riscof arch-test --clone
@@ -116,12 +116,9 @@ else
     echo "RISCOF framework already set up, skipping..."
 fi
 
-# Update config.ini with correct paths using our Python script
-echo "Updating config.ini with correct paths..."
-python3 update_config.py
-
-# Make run.sh executable
-chmod +x run.sh
+# # Update config.ini with correct paths using our Python script
+# echo "Updating config.ini with correct paths..."
+# python3 update_config.py
 
 echo "Setup completed. Use './run.sh' to test the Spike simulator against the Sail reference model."
 echo "Note: YOU MUST UPDATE THE SIGNATURE GRANULARITY TO 4; SEE THE README."
