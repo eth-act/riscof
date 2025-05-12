@@ -1,6 +1,8 @@
 .venv
 toolchains/gcc-riscv
 toolchains/sail-lang
+toolchains/risc0
+toolchains/riscv
 emulators/sail-riscv
 emulators/spike
 plugins/**/__pycache__
