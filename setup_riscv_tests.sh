@@ -212,9 +212,9 @@ clean:
 make isa 
 
 mkdir isa/build
-rm -rf isa/*.dump
 for f in isa/rv32ui-p-*; do mv "$f" "isa/build/${f#isa/rv32ui-p-}"; done
 for f in isa/rv32um-p-*; do mv "$f" "isa/build/${f#isa/rv32um-p-}"; done
+mv isa/build/*.dump isa/
 
 echo "ISA tests built in isa/build"
 ls isa/build
