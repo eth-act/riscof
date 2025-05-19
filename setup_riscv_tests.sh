@@ -1,7 +1,16 @@
 #!/bin/bash
 set -eu
 
-export PATH=$PWD/toolchains/risc0/bin:$PATH
+if [ ! -d "toolchains/risc0-riscv32im" ]; then
+    curl -L https://github.com/risc0/toolchain/releases/download/2024.01.05/riscv32im-linux-x86_64.tar.xz -o riscv-gnu-toolchain.tar.xz
+    tar xf riscv-gnu-toolchain.tar.xz
+    mv riscv32im-linux-x86_64 toolchains/risc0-riscv32im
+    rm -rf riscv-gnu-toolchain.tar.xz
+else
+    echo "RISC0 toolchain already installed, skipping..."
+fi
+
+export PATH=$PWD/toolchains/risc0-riscv32im/bin:$PATH
 
 git clone git@github.com:riscv-software-src/riscv-tests.git 
 cd riscv-tests 

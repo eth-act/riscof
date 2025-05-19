@@ -1,7 +1,7 @@
 .venv
 toolchains/gcc-riscv
 toolchains/sail-lang
-toolchains/risc0
+toolchains/risc0-riscv32im
 toolchains/riscv
 emulators/sail-riscv
 emulators/spike
