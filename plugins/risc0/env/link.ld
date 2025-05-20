@@ -14,4 +14,5 @@ SECTIONS
   .data.string : { *(.data.string)}
   .bss : { *(.bss) }
   _end = .;
-} 
+}
+

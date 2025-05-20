@@ -1,5 +1,5 @@
 .venv
-toolchains/gcc-riscv
+toolchains/risc0-riscv32im
 toolchains/sail-lang
 emulators/sail-riscv
 emulators/spike
