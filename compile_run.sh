@@ -19,19 +19,24 @@ riscv32-unknown-elf-gcc \
   -mabi=ilp32
 
 riscv32-unknown-elf-readelf -S  my.elf > $BASE/logs/my.elf.read
-riscv32-unknown-elf-objdump -d my.elf > $BASE/logs/my.elf.dump
+riscv32-unknown-elf-objdump -D \
+                            -j .text.init \
+                            -j .tohost \
+                            -j .data \
+                            -j .riscv.attributes \
+                            my.elf > $BASE/logs/my.elf.dump
 mv my.elf $BASE/emulators/risc0
 cd $BASE/emulators/risc0
 
 cargo build -p risc0-r0vm 
 
 # riscof test we just compiled for dut
-timeout --signal=SIGTERM --kill-after=1s 1s env RUST_LOG=trace ./target/debug/r0vm --test-elf my.elf --receipt my.receipt | $BASE/strip_ansi.sh > ${BASE}/logs/bad_trace.log
+timeout --signal=SIGTERM --kill-after=1s 1s env RUST_LOG=trace ./target/debug/r0vm --test-elf my.elf --receipt my.receipt | $BASE/strip_ansi.sh > ${BASE}/logs/my_trace.log
 
 # # riscof test compiled for ref
-# timeout --signal=SIGTERM --kill-after=1s 1s env RUST_LOG=trace ./target/debug/r0vm --test-elf $BASE/riscof_work/rv32i_m/I/src/add-01.S/ref/ref.elf --receipt my.receipt | $BASE/strip_ansi.sh > $BASE/logs/bad_trace.log
+# timeout --signal=SIGTERM --kill-after=1s 1s env RUST_LOG=trace ./target/debug/r0vm --test-elf $BASE/riscof_work/rv32i_m/I/src/add-01.S/ref/ref.elf --receipt my.receipt | $BASE/strip_ansi.sh > $BASE/logs/ref_trace.log
 
 # # riscv-test
-# timeout --signal=SIGTERM --kill-after=1s 5s env RUST_LOG=trace ./target/debug/r0vm --test-elf $BASE/riscv-tests/isa/build/add | $BASE/strip_ansi.sh > $BASE/logs/good_trace.log
+# timeout --signal=SIGTERM --kill-after=1s 5s env RUST_LOG=trace ./target/debug/r0vm --test-elf $BASE/riscv-tests/isa/build/add | $BASE/strip_ansi.sh > $BASE/logs/rvtests_trace.log
 
 

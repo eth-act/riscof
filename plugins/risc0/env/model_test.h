@@ -23,6 +23,8 @@
 
 #define RVMODEL_IO_ASSERT_GPR_EQ(_S, _R, _I)
 #define RVMODEL_BOOT
+
+// Our custom halting logic
 #define RVMODEL_HALT                                              \
   li t0, 0;         /* Status code for pass, can be changed */      \
   li a7, 0;         /* HOST_ECALL_TERMINATE */                      \
@@ -54,16 +56,6 @@
 //   la gp, __global_pointer$;                                                                        \
 //   .option pop;
 
-// #define RVTEST_CODE_END
-
-// #define RVTEST_DATA_BEGIN .data
-// #define RVTEST_DATA_END
-
-#define RVMODEL_DATA_BEGIN                                              \
-  RVMODEL_DATA_SECTION                                                        \
-  .align 4;\
-  .global begin_signature; begin_signature:
-
 #define RVMODEL_DATA_SECTION \
         .pushsection .tohost,"aw",@progbits;                            \
         .align 8; .global tohost; tohost: .dword 0;                     \
@@ -73,7 +65,13 @@
         .word 128;                                                      \
         .align 8; .global end_regstate; end_regstate:                   \
         .word 4;
-        
+
+#define RVMODEL_DATA_BEGIN                                              \
+  RVMODEL_DATA_SECTION                                                        \
+  .align 4;\
+  .global begin_signature; begin_signature:
+
+
 #define RVMODEL_DATA_END                                                      \
   .align 4;\
   .global end_signature; end_signature:
