@@ -5,10 +5,9 @@ set -eu
 BASE_DIR=$PWD
 
 # Set up paths
-PATH=$PATH:$BASE_DIR/toolchains/gcc-riscv/bin/
+PATH=$PATH:$BASE_DIR/toolchains/risc0-riscv32im/bin/
 PATH=$PATH:$BASE_DIR/toolchains/sail-lang/bin/
 PATH=$PATH:$BASE_DIR/emulators/sail-riscv/build/c_emulator
-PATH=$PATH:$BASE_DIR/emulators/spike/install/bin
 PATH=$PATH:$BASE_DIR/emulators/risc0/target/debug/
 
 # Activate the Python environment

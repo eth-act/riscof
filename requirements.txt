@@ -1,3 +1,2 @@
-git+https://github.com/riscv/riscof.git@1.25.3
-git+https://github.com/riscv-non-isa/riscv-arch-test.git@7a31ce4e27e52d858f7a177af58e19644d7447c9#subdirectory=riscv-isac
+riscof==1.25.3
 yq==3.4.3

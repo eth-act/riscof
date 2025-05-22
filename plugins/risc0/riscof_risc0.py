@@ -149,6 +149,7 @@ class risc0(pluginTemplate):
           # substitute all variables in the compile command that we created in the initialize
           # function
           cmd = self.compile_cmd.format(testentry['isa'].lower(), self.xlen, test, elf, compile_macros)
+          print(f'command to execute: {cmd}')
 
 	  # if the user wants to disable running the tests and only compile the tests, then
 	  # the "else" clause is executed below assigning the sim command to simple no action
