@@ -5,3 +5,4 @@ emulators/sail-riscv
 emulators/spike
 plugins/**/__pycache__
 riscof_work
+logs

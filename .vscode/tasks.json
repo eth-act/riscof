@@ -18,17 +18,10 @@
             ]
         },
         {
-            "label": "clean build r0vm",
+            "label": "unset-ARGV0",
             "type": "shell",
-            "command": "cd ${workspaceFolder}/emulators/risc0 && cargo clean && RUSTFLAGS=\"-C debuginfo=2\" cargo build -p risc0-r0vm",
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": [
-                "$rustc"
-            ]
-        }
+            "command": "unset ARGV0",
+            "problemMatcher": []
+          }        
     ]
 } 

@@ -6,70 +6,17 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/emulators/risc0/target/debug/r0vm",
-            "args": ["--elf", "${workspaceFolder}/riscof_work/rv32i_m/I/src/add-01.S/dut/my.elf"],
+            "args": ["--test-elf", "${workspaceFolder}/emulators/risc0/my.elf"],
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "build r0vm",
+            "env": {
+                "ARGV0": "",
+                "RUST_LOG": "debug"
+            },
             "sourceMap": {
                 "/rustc/": "${env:HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/"
             },
             "sourceLanguages": ["rust"],
             "terminal": "integrated"
-        },
-        {
-            "name": "Debug r0vm (Custom ELF File)",
-            "type": "lldb",
-            "request": "launch",
-            "program": "${workspaceFolder}/emulators/risc0/target/debug/r0vm",
-            "args": ["--elf", "${input:elfFilePath}"],
-            "cwd": "${workspaceFolder}",
-            "sourceMap": {
-                "/rustc/": "${env:HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/"
-            },
-            "sourceLanguages": ["rust"],
-            "terminal": "integrated"
-        },
-        {
-            "name": "Debug r0vm with Signature Output",
-            "type": "lldb",
-            "request": "launch",
-            "program": "${workspaceFolder}/emulators/risc0/target/debug/r0vm",
-            "args": ["--elf", "${input:elfFilePath}", "--output-file", "${input:signaturePath}"],
-            "cwd": "${workspaceFolder}",
-            "sourceMap": {
-                "/rustc/": "${env:HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/"
-            },
-            "sourceLanguages": ["rust"],
-            "terminal": "integrated"
-        },
-        {
-            "name": "Debug r0vm (CodeLLDB)",
-            "type": "lldb",
-            "request": "launch",
-            "cargo": {
-                "args": ["build", "--bin", "r0vm", "--package", "risc0-r0vm", "--manifest-path", "${workspaceFolder}/emulators/risc0/Cargo.toml"],
-                "filter": {
-                    "name": "r0vm",
-                    "kind": "bin"
-                }
-            },
-            "args": ["--elf", "${workspaceFolder}/riscof_work/rv32i_m/I/src/add-01.S/dut/my.elf"],
-            "cwd": "${workspaceFolder}/emulators/risc0",
-            "sourceLanguages": ["rust"],
-            "terminal": "integrated"
-        }
-    ],
-    "inputs": [
-        {
-            "id": "elfFilePath",
-            "type": "promptString",
-            "description": "Path to the ELF file",
-            "default": "${workspaceFolder}/riscof_work/rv32i_m/I/src/add-01.S/dut/my.elf"
-        },
-        {
-            "id": "signaturePath",
-            "type": "promptString",
-            "description": "Path to write signature file",
-            "default": "${workspaceFolder}/riscof_work/rv32i_m/I/src/add-01.S/dut/risc0.signature"
         }
     ]
 } 
