@@ -8,6 +8,7 @@ import random
 import string
 from string import Template
 import sys
+from pathlib import Path
 
 import riscof.utils as utils
 import riscof.constants as constants
@@ -36,7 +37,14 @@ class risc0(pluginTemplate):
         # test-bench produced by a simulator (like verilator, vcs, incisive, etc). In case of an iss or
         # emulator, this variable could point to where the iss binary is located. If 'PATH variable
         # is missing in the config.ini we can hardcode the alternate here.
-        self.dut_exe = os.path.join(config['PATH'] if 'PATH' in config else "","risc0")
+        
+        # Use relative path from the riscof root directory
+        # Get the directory containing this plugin file
+        plugin_dir = Path(__file__).parent.absolute()
+        # Navigate to riscof root (two levels up from plugins/risc0/)
+        riscof_root = plugin_dir.parent.parent
+        # Build path to r0vm executable
+        self.dut_exe = str(riscof_root / "emulators" / "risc0" / "target" / "debug" / "r0vm")
 
         # Number of parallel jobs that can be spawned off by RISCOF
         # for various actions performed in later functions, specifically to run the tests in
@@ -149,14 +157,13 @@ class risc0(pluginTemplate):
           # substitute all variables in the compile command that we created in the initialize
           # function
           cmd = self.compile_cmd.format(testentry['isa'].lower(), self.xlen, test, elf, compile_macros)
-          print(f'command to execute: {cmd}')
 
 	  # if the user wants to disable running the tests and only compile the tests, then
 	  # the "else" clause is executed below assigning the sim command to simple no action
 	  # echo statement.
           if self.target_run:
             # set up the simulation command. Template is for spike. Please change.
-            simcmd = self.dut_exe + ' --isa={0} +signature={1} +signature-granularity=4 {2}'.format(self.isa, sig_file, elf)
+            simcmd = self.dut_exe + ' --signatures {0} --test-elf {1}'.format(sig_file, elf)
           else:
             simcmd = 'echo "NO RUN"'
 
