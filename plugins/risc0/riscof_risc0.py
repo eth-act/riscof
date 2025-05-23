@@ -44,7 +44,7 @@ class risc0(pluginTemplate):
         # Navigate to riscof root (two levels up from plugins/risc0/)
         riscof_root = plugin_dir.parent.parent
         # Build path to r0vm executable
-        self.dut_exe = str(riscof_root / "emulators" / "risc0" / "target" / "debug" / "r0vm")
+        self.dut_exe = "/home/cody/share/work/zkVMs/riscof/emulators/risc0/target/debug/r0vm"
 
         # Number of parallel jobs that can be spawned off by RISCOF
         # for various actions performed in later functions, specifically to run the tests in
