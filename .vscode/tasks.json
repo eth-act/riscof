@@ -4,24 +4,21 @@
         {
             "label": "build r0vm",
             "type": "shell",
-            "command": "cd ${workspaceFolder}/emulators/risc0 && RUSTFLAGS=\"-C debuginfo=2\" cargo build -p risc0-r0vm",
+            "command": "unset ARGV0 && cd ${workspaceFolder}/emulators/risc0 && cargo build -p risc0-r0vm",
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
             "presentation": {
                 "reveal": "always",
-                "panel": "new"
+                "panel": "new",
+                "focus": false,
+                "clear": true,
+                "close": true
             },
             "problemMatcher": [
                 "$rustc"
             ]
-        },
-        {
-            "label": "unset-ARGV0",
-            "type": "shell",
-            "command": "unset ARGV0",
-            "problemMatcher": []
-          }        
+        }
     ]
 } 
