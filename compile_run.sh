@@ -12,7 +12,7 @@ riscv32-unknown-elf-gcc \
   -T plugins/risc0/env/link.ld \
   -I plugins/risc0/env/ \
   -I riscv-arch-test/riscv-test-suite/env \
-  riscv-arch-test/riscv-test-suite/rv32i_m/I/src/jalr-01.S \
+  riscv-arch-test/riscv-test-suite/rv32i_m/I/src/misalign1-jalr-01.S \
   -o my.elf \
   -DTEST_CASE_1=True \
   -DXLEN=32 \
