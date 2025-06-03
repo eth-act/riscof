@@ -1,5 +1,8 @@
+rustup default nightly
 BASE=$PWD
 PATH=$PATH:$BASE/toolchains/risc0-riscv32im/bin/
+# No special flags needed for Valgrind - just build normally
+export RUSTFLAGS="--allow unused_attributes"
 
 riscv32-unknown-elf-gcc \
   -march=rv32i \
@@ -28,10 +31,24 @@ riscv32-unknown-elf-objdump -D \
 mv my.elf $BASE/emulators/risc0
 cd $BASE/emulators/risc0
 
-cargo build -p risc0-r0vm 
+# Only build if needed - no clean
+cargo +nightly build -p risc0-r0vm 
 
-# riscof test we just compiled for dut
-RUST_LOG=debug ./target/debug/r0vm --test-elf my.elf --signatures my.signatures
+echo "Running test a few times to catch intermittent failures..."
+export RUST_BACKTRACE=1
+
+for i in {1..5}; do
+    echo "=== Run $i ==="
+    ./target/debug/r0vm --test-elf my.elf --signatures my.signatures
+    echo ""
+done
+
+# # Run with Valgrind to detect memory errors
+# echo "Running with Valgrind to detect memory corruption..."
+# valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all \
+#          --track-origins=yes --verbose \
+#          --log-file=valgrind.log \
+#          ./target/debug/r0vm --test-elf my.elf --signatures my.signatures
 
 # # riscof test compiled for ref
 # timeout --signal=SIGTERM --kill-after=1s 1s env RUST_LOG=trace ./target/debug/r0vm --test-elf $BASE/riscof_work/rv32i_m/I/src/add-01.S/ref/ref.elf --receipt my.receipt | $BASE/strip_ansi.sh > $BASE/logs/ref_trace.log
