@@ -1,8 +1,7 @@
 .venv
 toolchains/risc0-riscv32im
-toolchains/sail-lang
 emulators/sail-riscv
-emulators/spike
 plugins/**/__pycache__
 riscof_work
+riscv-arch-test
 logs
