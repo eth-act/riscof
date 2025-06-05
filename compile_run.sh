@@ -1,8 +1,6 @@
 rustup default nightly
 BASE=$PWD
 PATH=$PATH:$BASE/toolchains/risc0-riscv32im/bin/
-# No special flags needed for Valgrind - just build normally
-export RUSTFLAGS="--allow unused_attributes"
 
 riscv32-unknown-elf-gcc \
   -march=rv32i \
@@ -31,24 +29,42 @@ riscv32-unknown-elf-objdump -D \
 mv my.elf $BASE/emulators/risc0
 cd $BASE/emulators/risc0
 
-# Only build if needed - no clean
-cargo +nightly build -p risc0-r0vm 
+cargo build -p risc0-r0vm
 
 echo "Running test a few times to catch intermittent failures..."
-export RUST_BACKTRACE=1
-
-for i in {1..5}; do
+for i in {1..10}; do
     echo "=== Run $i ==="
-    ./target/debug/r0vm --test-elf my.elf --signatures my.signatures
+    RUST_BACKTRACE=1 ./target/debug/r0vm --test-elf my.elf --signatures my.signatures
+    # RUST_BACKTRACE=1 RAYON_NUM_THREADS=1 RUSTFLAGS="--cfg single_threaded" ./target/debug/r0vm --test-elf my.elf --signatures my.signatures
     echo ""
 done
 
-# # Run with Valgrind to detect memory errors
-# echo "Running with Valgrind to detect memory corruption..."
-# valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all \
-#          --track-origins=yes --verbose \
-#          --log-file=valgrind.log \
-#          ./target/debug/r0vm --test-elf my.elf --signatures my.signatures
+# # Run with Valgrind multiple times to catch intermittent double free
+# echo "Running with Valgrind multiple times to catch intermittent memory corruption..."
+# for i in {1..15}; do
+#     echo "=== Valgrind Run $i ==="
+#     # Specific flags for double-free detection and heap corruption
+#     valgrind --tool=memcheck \
+#              --leak-check=full \
+#              --show-leak-kinds=all \
+#              --track-origins=yes \
+#              --freelist-vol=10000000 \
+#              --freelist-big-blocks=10000000 \
+#              --expensive-definedness-checks=yes \
+#              --track-fds=yes \
+#              --log-file=valgrind_run_${i}.log \
+#              ./target/debug/r0vm --test-elf my.elf --signatures my.signatures
+    
+#     exit_code=$?
+#     echo "Exit code: $exit_code"
+    
+#     # Check if we caught any errors
+#     if grep -q "ERROR SUMMARY: [1-9]" valgrind_run_${i}.log; then
+#         echo "Found memory errors in run $i!"
+#         break
+#     fi
+#     echo ""
+# done
 
 # # riscof test compiled for ref
 # timeout --signal=SIGTERM --kill-after=1s 1s env RUST_LOG=trace ./target/debug/r0vm --test-elf $BASE/riscof_work/rv32i_m/I/src/add-01.S/ref/ref.elf --receipt my.receipt | $BASE/strip_ansi.sh > $BASE/logs/ref_trace.log
