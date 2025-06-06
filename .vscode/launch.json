@@ -5,8 +5,8 @@
             "name": "Debug r0vm with ELF file",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/emulators/risc0/target/debug/r0vm",
-            "args": ["--test-elf", "${workspaceFolder}/emulators/risc0/my.elf"],
+            "program": "${workspaceFolder}/emulators/sp1/target/debug/r0vm",
+            "args": ["--test-elf", "${workspaceFolder}/emulators/sp1/my.elf"],
             "cwd": "${workspaceFolder}",
             "env": {
                 "ARGV0": "",

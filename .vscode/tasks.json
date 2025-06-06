@@ -4,7 +4,7 @@
         {
             "label": "build r0vm",
             "type": "shell",
-            "command": "unset ARGV0 && cd ${workspaceFolder}/emulators/risc0 && cargo build -p risc0-r0vm",
+            "command": "unset ARGV0 && cd ${workspaceFolder}/emulators/sp1 && cargo build -p ______",
             "group": {
                 "kind": "build",
                 "isDefault": true

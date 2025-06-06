@@ -1,0 +1,352 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 257ba5e5..3433cf81 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -5803,6 +5803,7 @@ dependencies = [
+  "bincode",
+  "bytemuck",
+  "clap 4.5.37",
++ "risc0-binfmt",
+  "risc0-circuit-rv32im",
+  "risc0-zkvm",
+  "risc0-zkvm-methods",
+diff --git a/risc0/build_kernel/src/lib.rs b/risc0/build_kernel/src/lib.rs
+index d84b6aad..66d41d90 100644
+--- a/risc0/build_kernel/src/lib.rs
++++ b/risc0/build_kernel/src/lib.rs
+@@ -140,14 +140,13 @@ impl KernelBuild {
+         // `RUSTC_WRAPPER=/path/to/sccache` to speed up rebuilds of C++ kernels
+         cc::Build::new()
+             .cpp(true)
+-            .debug(false)
++            .debug(true)
+             .files(&self.files)
+             .includes(&self.inc_dirs)
+             .flag_if_supported("/std:c++17")
+             .flag_if_supported("-std=c++17")
+-            .flag_if_supported("-fno-var-tracking")
+-            .flag_if_supported("-fno-var-tracking-assignments")
+-            .flag_if_supported("-g0")
++            // .flag_if_supported("-fno-var-tracking")
++            // .flag_if_supported("-fno-var-tracking-assignments")
+             .compile(output);
+     }
+ 
+diff --git a/risc0/circuit/rv32im-sys/kernels/cxx/buffers.h b/risc0/circuit/rv32im-sys/kernels/cxx/buffers.h
+index 01530222..51f3a487 100644
+--- a/risc0/circuit/rv32im-sys/kernels/cxx/buffers.h
++++ b/risc0/circuit/rv32im-sys/kernels/cxx/buffers.h
+@@ -37,6 +37,7 @@ template <bool isGlobal> struct Buffer {
+              col,
+              val.asUInt32(),
+              elem.asUInt32());
++      // this throw is triggering: with set(row: 1668, col: 14, val: 0x000001d5) cur: 0x000001d4
+       throw std::runtime_error("Inconsistent set");
+     }
+     // printf("set(row: %zu, col: %zu, val: 0x%08x)\n", row, col, val.asUInt32());
+diff --git a/risc0/circuit/rv32im/src/execute/executor.rs b/risc0/circuit/rv32im/src/execute/executor.rs
+index b0589960..c6ed3acc 100644
+--- a/risc0/circuit/rv32im/src/execute/executor.rs
++++ b/risc0/circuit/rv32im/src/execute/executor.rs
+@@ -79,6 +79,7 @@ pub struct ExecutorResult {
+     pub paging_cycles: u64,
+     pub reserved_cycles: u64,
+     pub claim: Rv32imV2Claim,
++    pub test_signatures: Option<Vec<u32>>,
+ }
+ 
+ #[derive(Default)]
+@@ -341,6 +342,36 @@ impl<'a, 'b, S: Syscall> Executor<'a, 'b, S> {
+             Ok(post_digest)
+         })?;
+ 
++        // Log a small memory region for debugging
++        let test_signatures = if let (Ok(begin_addr_str), Ok(size_str)) = (
++            std::env::var("RISC0_SIG_BEGIN_ADDR"),
++            std::env::var("RISC0_SIG_SIZE")
++        ) {
++            tracing::debug!("Found environment variables: RISC0_SIG_BEGIN_ADDR={}, RISC0_SIG_SIZE={}", begin_addr_str, size_str);
++            let begin_addr: u32 = if begin_addr_str.starts_with("0x") || begin_addr_str.starts_with("0X") {
++                u32::from_str_radix(&begin_addr_str[2..], 16).unwrap_or_else(|_| {
++                    tracing::warn!("Invalid RISC0_SIG_BEGIN_ADDR, using default 0x80006110");
++                    0x80006110
++                })
++            } else {
++                begin_addr_str.parse().unwrap_or_else(|_| {
++                    tracing::warn!("Invalid RISC0_SIG_BEGIN_ADDR, using default 0x80006110");
++                    0x80006110
++                })
++            };
++            let size: usize = size_str.parse().unwrap_or_else(|_| {
++                tracing::warn!("Invalid RISC0_SIG_SIZE, using default 2356");
++                2356
++            });
++            tracing::debug!("Parsed values: addr=0x{:x}, size={}", begin_addr, size);
++            tracing::debug!("Using dynamic signature collection: addr=0x{:x}, size={}", begin_addr, size);
++            self.collect_signatures(ByteAddr(begin_addr), size)?
++        } else {
++            tracing::debug!("Environment variables not found, using hardcoded values");
++            tracing::debug!("No signature symbols found, using hardcoded values: addr=0x80006110, size=2356");
++            self.collect_signatures(ByteAddr(0x80006110), 2356)?
++        };
++
+         let session_claim = Rv32imV2Claim {
+             pre_state: initial_digest,
+             post_state: post_digest,
+@@ -358,6 +389,7 @@ impl<'a, 'b, S: Syscall> Executor<'a, 'b, S> {
+             paging_cycles: self.cycles.paging,
+             reserved_cycles: self.cycles.reserved,
+             claim: session_claim,
++            test_signatures: Some(test_signatures),
+         })
+     }
+ 
+@@ -464,6 +496,7 @@ impl<'a, 'b, S: Syscall> Executor<'a, 'b, S> {
+     fn trace_instruction(&mut self, cycle: u64, kind: InsnKind, decoded: &DecodedInstruction) {
+         if unlikely(tracing::enabled!(tracing::Level::TRACE)) {
+             tracing::trace!(
++                // lovely!
+                 "[{}:{}:{cycle}] {:?}> {:#010x}  {}",
+                 self.user_cycles + 1,
+                 self.segment_cycles() + 1,
+@@ -476,6 +509,46 @@ impl<'a, 'b, S: Syscall> Executor<'a, 'b, S> {
+             self.ring.push((self.pc, kind, decoded.clone()));
+         }
+     }
++
++    // fn log_memory_region(&mut self, addr: ByteAddr, size: usize) {
++    //     if let Ok(region_data) = self.load_region(LoadOp::Peek, addr, size) {
++    //         tracing::info!("Memory dump at {:#x} ({} bytes):", addr.0, size);
++    //         const CHUNK_SIZE: usize = 4;
++    //         for (i, chunk) in region_data.chunks(CHUNK_SIZE).enumerate() {
++    //             let chunk_addr = addr.0 + (i * CHUNK_SIZE) as u32;
++    //             let hex_str = chunk
++    //                 .iter()
++    //                 .map(|b| format!("{:02x}", b))
++    //                 .collect::<Vec<_>>()
++    //                 .join(" ");
++    //             tracing::info!("  {:#x}: {}", chunk_addr, hex_str);
++    //         }
++    //     } else {
++    //         tracing::warn!("Failed to read memory region at {:#x}", addr.0);
++    //     }
++    // }
++
++    fn collect_signatures(&mut self, addr: ByteAddr, size: usize) -> Result<Vec<u32>> {
++        const NUM_SIGNATURE_BYTES: usize = 4;
++        if let Ok(region_data) = self.load_region(LoadOp::Peek, addr, size) {
++            let mut signatures = Vec::<u32>::new();
++            for chunk in region_data.chunks(NUM_SIGNATURE_BYTES) {
++                let signature = chunk
++                    .iter()
++                    .rev()
++                    .fold(0, |acc: u32, &b: &u8| (acc << 8) + (b as u32));
++                // tracing::debug!("signature: {signature:08x}");
++                signatures.push(signature);
++            }
++            Ok(signatures)
++        } else {
++            tracing::warn!("Failed to read memory region at {:#x}", addr.0);
++            Err(anyhow::anyhow!(
++                "Failed to read memory region at {:#x}",
++                addr.0
++            ))
++        }
++    }
+ }
+ 
+ impl<S: Syscall> Risc0Context for Executor<'_, '_, S> {
+diff --git a/risc0/r0vm/Cargo.toml b/risc0/r0vm/Cargo.toml
+index c1248d0b..b03b655f 100644
+--- a/risc0/r0vm/Cargo.toml
++++ b/risc0/r0vm/Cargo.toml
+@@ -11,6 +11,7 @@ repository = { workspace = true }
+ bincode = "1.3"
+ bytemuck = "1.12"
+ clap = { version = "4.5", features = ["derive", "env"] }
++risc0-binfmt = { workspace = true }
+ risc0-circuit-rv32im = { workspace = true }
+ risc0-zkvm = { workspace = true, features = ["prove"] }
+ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+diff --git a/risc0/r0vm/src/lib.rs b/risc0/r0vm/src/lib.rs
+index 455dc3ff..8c940eaf 100644
+--- a/risc0/r0vm/src/lib.rs
++++ b/risc0/r0vm/src/lib.rs
+@@ -72,6 +72,11 @@ struct Cli {
+     /// Compute the image_id for the specified ELF
+     #[arg(long)]
+     id: bool,
++
++    /// Test signatures output file.
++    #[arg(long)]
++    signatures: Option<PathBuf>,
++
+ }
+ 
+ #[derive(Args)]
+@@ -90,6 +95,10 @@ struct Mode {
+ 
+     #[arg(long)]
+     segment: Option<PathBuf>,
++
++    /// Test ELF to execute (for RISC-V test files)
++    #[arg(long)]
++    test_elf: Option<PathBuf>,
+ }
+ 
+ #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+@@ -167,6 +176,12 @@ pub fn main() {
+             let image_contents = fs::read(image_path).unwrap();
+             let image = bincode::deserialize(&image_contents).unwrap();
+             ExecutorImpl::new(env, image).unwrap()
++        } else if let Some(ref test_elf_path) = args.mode.test_elf {
++            // Read the test ELF file
++            let elf_contents = fs::read(test_elf_path).unwrap();
++
++            // Use from_kernel_elf which includes ELF symbol parsing
++            ExecutorImpl::from_kernel_elf(env, &elf_contents).unwrap()
+         } else {
+             unreachable!()
+         };
+@@ -189,6 +204,19 @@ pub fn main() {
+             );
+         }
+     }
++
++    if let Some(signature_file) = args.signatures.as_ref() {
++        fs::write(
++            signature_file,
++            session
++                .test_signatures
++                .expect("No signatures found")
++                .iter()
++                .map(|signature| format!("{:08x}\n", signature))
++                .collect::<String>(),
++        )
++        .expect("Unable to write signature file");
++    }
+ }
+ 
+ impl Cli {
+diff --git a/risc0/zkvm/src/host/server/exec/executor.rs b/risc0/zkvm/src/host/server/exec/executor.rs
+index 6348b861..bc7e836c 100644
+--- a/risc0/zkvm/src/host/server/exec/executor.rs
++++ b/risc0/zkvm/src/host/server/exec/executor.rs
+@@ -36,6 +36,9 @@ use risc0_zkp::core::digest::Digest;
+ use risc0_zkvm_platform::{align_up, fileno};
+ use tempfile::tempdir;
+ 
++// Add ELF parsing imports
++use elf::{abi::STT_OBJECT, endian::AnyEndian, ElfBytes};
++
+ use crate::{
+     host::{client::env::SegmentPath, server::session::Session},
+     receipt_claim::exit_code_from_rv32im_v2_claim,
+@@ -77,6 +80,59 @@ fn check_program_version(header: &ProgramBinaryHeader) -> Result<()> {
+     Ok(())
+ }
+ 
++/// Parse ELF symbols to find signature region boundaries and set environment variables
++fn parse_and_set_signature_symbols(elf_data: &[u8]) -> Result<()> {
++    tracing::debug!("Starting ELF symbol parsing...");
++    let elf = ElfBytes::<AnyEndian>::minimal_parse(elf_data)
++        .context("Failed to parse ELF file")?;
++    
++    let (symbol_table, string_table) = elf.symbol_table()
++        .context("Failed to get symbol table")?
++        .ok_or_else(|| anyhow::anyhow!("No symbol table found"))?;
++    
++    let mut begin_signature_addr: Option<u64> = None;
++    let mut end_signature_addr: Option<u64> = None;
++    
++    tracing::debug!("Scanning {} symbols...", symbol_table.len());
++    
++    for symbol in symbol_table.iter() {
++        if symbol.st_symtype() == STT_OBJECT || symbol.st_symtype() == elf::abi::STT_NOTYPE {
++            if let Ok(name) = string_table.get(symbol.st_name as usize) {
++                // tracing::debug!("Found symbol: {} at address 0x{:x}", name, symbol.st_value);
++                match name {
++                    "begin_signature" => {
++                        begin_signature_addr = Some(symbol.st_value);
++                        tracing::debug!("Found begin_signature at 0x{:x}", symbol.st_value);
++                    }
++                    "end_signature" => {
++                        end_signature_addr = Some(symbol.st_value);
++                        tracing::debug!("Found end_signature at 0x{:x}", symbol.st_value);
++                    }
++                    _ => {}
++                }
++            }
++        }
++    }
++    
++    if let (Some(begin_addr), Some(end_addr)) = (begin_signature_addr, end_signature_addr) {
++        let size = (end_addr - begin_addr) as usize;
++        tracing::debug!("Setting RISC0_SIG_BEGIN_ADDR=0x{:x}", begin_addr);
++        tracing::debug!("Setting RISC0_SIG_SIZE={}", size);
++        
++        std::env::set_var("RISC0_SIG_BEGIN_ADDR", format!("0x{:x}", begin_addr));
++        std::env::set_var("RISC0_SIG_SIZE", size.to_string());
++        
++        tracing::debug!("Environment variables set successfully");
++        Ok(())
++    } else {
++        tracing::debug!("Could not find both begin_signature and end_signature symbols");
++        Err(anyhow::anyhow!(
++            "Could not find signature symbols: begin_signature={:?}, end_signature={:?}",
++            begin_signature_addr, end_signature_addr
++        ))
++    }
++}
++
+ impl<'a> ExecutorImpl<'a> {
+     /// Construct a new [ExecutorImpl] from a [MemoryImage] and entry point.
+     ///
+@@ -97,6 +153,11 @@ impl<'a> ExecutorImpl<'a> {
+         let binary = ProgramBinary::decode(elf)?;
+         check_program_version(&binary.header)?;
+ 
++        // Parse signature symbols and set environment variables
++        if let Err(e) = parse_and_set_signature_symbols(elf) {
++            tracing::warn!("Failed to parse signature symbols: {}", e);
++        }
++
+         let image = binary.to_image()?;
+ 
+         let profiler = if env.pprof_out.is_some() {
+@@ -116,7 +177,12 @@ impl<'a> ExecutorImpl<'a> {
+ 
+     /// TODO(flaub)
+     #[allow(dead_code)]
+-    pub(crate) fn from_kernel_elf(env: ExecutorEnv<'a>, elf: &[u8]) -> Result<Self> {
++    pub fn from_kernel_elf(env: ExecutorEnv<'a>, elf: &[u8]) -> Result<Self> {
++        // Parse signature symbols and set environment variables
++        if let Err(e) = parse_and_set_signature_symbols(elf) {
++            tracing::warn!("Failed to parse signature symbols: {}", e);
++        }
++
+         let kernel = Program::load_elf(elf, u32::MAX)?;
+         let image = MemoryImage::new_kernel(kernel);
+         Self::with_details(env, image, None)
+@@ -291,6 +357,7 @@ impl<'a> ExecutorImpl<'a> {
+             syscall_metrics,
+             hooks: vec![],
+             ecall_metrics: ecall_metrics.into(),
++            test_signatures: result.test_signatures,
+         };
+ 
+         tracing::info!("execution time: {elapsed:?}");
+diff --git a/risc0/zkvm/src/host/server/session.rs b/risc0/zkvm/src/host/server/session.rs
+index 71a44bfe..5c50c7df 100644
+--- a/risc0/zkvm/src/host/server/session.rs
++++ b/risc0/zkvm/src/host/server/session.rs
+@@ -94,6 +94,9 @@ pub struct Session {
+     /// The system state of the final MemoryImage at the end of execution.
+     pub post_state: SystemState,
+ 
++    /// Signatures used for emulator testing and fuzzing
++    pub test_signatures: Option<Vec<u32>>,
++
+     /// A list of pending ZKR proof requests.
+     // TODO: make this scalable so we don't OOM
+     pub(crate) pending_zkrs: Vec<ProveZkrRequest>,
