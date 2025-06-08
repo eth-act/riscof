@@ -2,9 +2,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build r0vm",
+            "label": "build sp1",
             "type": "shell",
-            "command": "unset ARGV0 && cd ${workspaceFolder}/emulators/sp1 && cargo build -p ______",
+            "command": "unset ARGV0 && cd ${workspaceFolder}/emulators/sp1 && cargo build -p sp1-perf",
             "group": {
                 "kind": "build",
                 "isDefault": true

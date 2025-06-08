@@ -5,8 +5,8 @@
             "name": "Debug r0vm with ELF file",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/emulators/sp1/target/debug/r0vm",
-            "args": ["--test-elf", "${workspaceFolder}/emulators/sp1/my.elf"],
+            "program": "${workspaceFolder}/emulators/sp1/target/debug/sp1-perf-executor",
+            "args": ["--program", "${workspaceFolder}/emulators/sp1/my.elf", "--stdin", "${workspaceFolder}/emulators/sp1/empty_stdin.bin", "--executor-mode", "simple"],
             "cwd": "${workspaceFolder}",
             "env": {
                 "ARGV0": "",
@@ -17,7 +17,7 @@
             },
             "sourceLanguages": ["rust"],
             "console": "internalConsole",
-            "preLaunchTask": "build r0vm",
+            "preLaunchTask": "build sp1",
             "internalConsoleOptions": "openOnSessionStart"
         }
     ]

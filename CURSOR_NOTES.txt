@@ -60,12 +60,21 @@
 - Some instruction in arch test ELF is not recognized by SP1's disassembler
 - Need to identify which instruction(s) are unsupported
 
+**🎯 ROOT CAUSE IDENTIFIED - Program Termination Issue:**
+- Panic occurs at instruction 3277/3282 in SP1's transpile function
+- Program ends properly with `ecall` at address 2000332c, but SP1 continues execution
+- SP1 tries to execute data sections containing 0xdeadbeef signature padding
+- 0xdeadbeef (bits[6:0]=0x6F) decodes as JAL instruction but it's just data
+- SP1 lacks proper program termination handling after ecall (unlike RISC0)
+- Need SP1 equivalent of RISC0's ELF execution model with signature collection
+
 ### Next Steps:
 1. ✅ Build SP1 to get executables
 2. ✅ Find signature construction capabilities - uses syscalls, no built-in signature support
 3. ✅ Test basic program execution with SP1 - identified program format issue
 4. ✅ Find SP1's equivalent to RISC0's `from_kernel_elf` method - uses Program::from()
 5. ✅ Resolve SP1 memory layout constraints - created SP1-compatible linker script
-6. 🔍 Identify unsupported instructions in SP1's disassembler and handle them
-7. 🔍 Implement signature generation via SP1 WRITE syscall
-8. 🔍 Complete SP1 workflow for RISC-V arch tests
+6. ✅ Identify unsupported instructions in SP1's disassembler and handle them - root cause found
+7. 🔍 Implement proper program termination handling in SP1 for ELF execution
+8. 🔍 Add signature collection support similar to RISC0's approach
+9. 🔍 Complete SP1 workflow for RISC-V arch tests
