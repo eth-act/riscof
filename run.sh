@@ -5,7 +5,7 @@ set -eu
 # Set up paths
 PATH=$PATH:$PWD/toolchains/risc0-riscv32im/bin/
 PATH=$PATH:$PWD/emulators/sail-riscv/bin/
-PATH=$PATH:$PWD/emulators/risc0/target/debug/
+PATH=$PATH:$PWD/emulators/sp1/target/debug/
 
 # Activate the Python environment
 if [ -d ".venv" ]; then
