@@ -78,3 +78,7 @@
 7. 🔍 Implement proper program termination handling in SP1 for ELF execution
 8. 🔍 Add signature collection support similar to RISC0's approach
 9. 🔍 Complete SP1 workflow for RISC-V arch tests
+
+cargo install --path crates/cli --bin cargo-prove
+cargo prove install-toolchain
+throw when instructions.len = 3276/3282

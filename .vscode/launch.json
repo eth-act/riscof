@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug r0vm with ELF file",
+            "name": "Debug sp1 with ELF file",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/emulators/sp1/target/debug/sp1-perf-executor",
