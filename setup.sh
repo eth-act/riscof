@@ -3,7 +3,7 @@ set -eu
 
 mkdir -p toolchains emulators
 
-# Install RISC0-published rv32im toolchain if not already installed
+# Install RISC0-published rv32im toolchain if not already installed.
 if [ ! -d "toolchains/risc0-riscv32im" ]; then
   echo "Downloading and installing RISC0 toolchain..."
   curl -L https://github.com/risc0/toolchain/releases/download/2024.01.05/riscv32im-linux-x86_64.tar.xz | tar -xJ -C toolchains/
@@ -33,9 +33,11 @@ cargo build -p risc0-r0vm --manifest-path emulators/risc0/Cargo.toml --quiet
 # Set up python environment for RISCOF testing framework
 if [ ! -d ".venv" ]; then
   echo "Setting up Python virtual environment..."
-  python3 -m venv .venv
+  python -m venv .venv
   source .venv/bin/activate
-  python3 -m pip install -r requirements.txt
+  python -m ensurepip --upgrade
+  pip install --upgrade pip setuptools wheel
+  python -m pip install -r requirements.txt
 else
   echo "Python virtual environment already exists, activating..."
   source .venv/bin/activate
