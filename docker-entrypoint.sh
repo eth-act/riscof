@@ -93,12 +93,10 @@ ispec=plugins/$PLUGIN_NAME/${PLUGIN_NAME}_isa.yaml
 pspec=plugins/$PLUGIN_NAME/${PLUGIN_NAME}_platform.yaml
 target_run=1
 PATH=/riscof/dut-bin/
-jobs=1
 
 [sail_cSim]
 pluginpath=plugins/sail_cSim
 PATH=/riscof/emulators/sail-riscv/bin/
-jobs=1
 EOF
 
 # If command line arguments are provided, run them
@@ -109,4 +107,3 @@ if [ $# -eq 0 ]; then
 else
   exec "$@"
 fi
-
