@@ -1,50 +1,22 @@
-Following https://riscof.readthedocs.io/en/stable/installation.html 
-I hit an error `ImportError: cannot import name 'preprocessing' from 'riscv_isac.isac'`. This is discussed in https://github.com/riscv-software-src/riscof/issues/128 where the workaround is to manually install a newer version of riscv-isac (Instruction Set Architecture Coverage; measures how many features are covered). Command: pip install git+https://github.com/riscv-non-isa/riscv-arch-test/#subdirectory=riscv-isac.
+# RISCOF for ZKVMs
 
-Many issues... made setup.sh along the way...
+The [RISC-V Architectural Tests](https://github.com/riscv-non-isa/riscv-arch-test) are used by RISC-V International to determine whether a RISC-V implementation is officially compatible with the specification (see [here](https://riscv.org/about/brand-guidelines/)). The framework of the tests is differential. A test vector is an assembly file (.S file) that must be compiled to an ELF file for both a reference model ("REF") and the device under testing ("DUT").  Both REF and DUT must not only be able to execute the RISC-V file, but also they must have additional functionality to extract and write out a region of memory consisting of "signatures", which checkpoints written during execution. If all signatures match, the DUT passes the test suite.
 
-Hit
-```
-(.venv) ubuntu@ip-172-31-19-46:~/riscof$ riscof validateyaml --config=config.ini
-    INFO | ****** RISCOF: RISC-V Architectural Test Framework 1.25.3 *******
-    INFO | using riscv_isac version : 0.18.0
-    INFO | using riscv_config version : 3.18.3
-    INFO | Reading configuration from: /home/ubuntu/riscof/config.ini
-    INFO | Preparing Models
-    INFO | Input-ISA file
-    INFO | ISACheck: Loading input file: /home/ubuntu/riscof/spike/spike_isa.yaml
-    INFO | ISACheck: Load Schema /home/ubuntu/riscof/.venv/lib/python3.12/site-packages/riscv_config/schemas/schema_isa.yaml
-    INFO | ISACheck: Processing Hart:0
-    INFO | ISACheck: Initiating Validation for Hart:0
-   ERROR | ISACheck: Error in /home/ubuntu/riscof/spike/spike_isa.yaml.
-   ERROR |  PMP:
-   ERROR |   - unknown field
-```
+This repository provides a Docker container for running these tests using the canonical Python framework [RISCOF](https://github.com/riscv-software-src/riscof/) against the formally specified [Sail reference model](https://github.com/riscv/sail-riscv). Applying the test suite to a given RISC-V emulator means:
+1) Adding signature extraction functionality to the emulator; 
+2) Developing a plugin for that emulator.
 
-LLM:
+A plugin specifies the particular ISA implemented by the emulator (register size and supported extensions), it describes how to compile the test vectors for the emulator, and it implements certain C preprocessor macros used in the test vectors.Examples of plugins can be found in [plugins](./plugins). 
+
+With these features in hand, we can run the tests with the given emulator as the DUT. For this we build the container with
 ```
-To summarize what we did to solve your issue:
-We removed the PMP block from your spike_isa.yaml file because it was using an incorrect format that was not recognized by the current version of RISCV_Config (3.18.3).
-The YAML validator automatically added the required pmp_granularity field with the default value of 0.
-The error was caused by the format of the PMP configuration in the YAML file. It appears that either:
-The format in the template file you were using was outdated, or
-The RISCV_Config schema has changed between versions.
-Now your validation is working correctly, and you can proceed with using RISCOF for your RISC-V testing.
+docker build -t riscof-zkvm:latest .
+```
+(or pull it from ...) and run it with the emulator and plugin mounted:
+```
+docker run --rm \
+    -v "$(pwd)/emulators/risc0/target/debug:/dut/bin" \
+    -v "$(pwd)/plugins/risc0:/dut/plugin" \
+    riscof-zkvm:latest
 ```
 
-Python error on missing signature file resolved by resetting to a commit prior to 17cfdec13b99e61da9fdf8c32d21b33e008bd82d (prior commit is 03ceb5ba24e88c82a0bbe0c776afb8702057e81a) which changed some CLI flags.
-
-
-
-
-Accidentally created 500GB of logs. Needed to update a line in `sail_cSim/riscof_sail_cSim.py` to 
-```
-execute += self.sail_exe[self.xlen] + '  -i -v {0} --signature-granularity=4 --test-signature={1} {2} > {3}.log 2>&1;'.format(pmp_flags, sig_file, elf,test_name)
-```
-(remove ram field to match `riscof/spike/riscof_spike.py`ure)
-
-and also add lines in the `config.ini`
-```
-ispec=/home/cody/share/work/zkVMs/riscof/spike/spike_isa.yaml
-pspec=/home/cody/share/work/zkVMs/riscof/spike/spike_platform.yaml
-```
