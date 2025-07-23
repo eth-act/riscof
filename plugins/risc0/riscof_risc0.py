@@ -38,8 +38,8 @@ class risc0(pluginTemplate):
         # emulator, this variable could point to where the iss binary is located. If 'PATH variable
         # is missing in the config.ini we can hardcode the alternate here.
         
-        # Build path to r0vm executable
-        self.dut_exe = os.path.join(os.path.abspath(config['PATH']), "r0vm")
+        # Build path to executable
+        self.dut_exe = os.path.join(os.path.abspath(config['PATH']), "dut-exe")
 
         # Number of parallel jobs that can be spawned off by RISCOF
         # for various actions performed in later functions, specifically to run the tests in

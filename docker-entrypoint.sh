@@ -19,14 +19,7 @@ if [ ! -d "/dut/plugin" ] || [ -z "$(ls -A /dut/plugin)" ]; then
   exit 1
 fi
 
-# Find the DUT executable (specifically look for known ZKVM executables first)
-# Common ZKVM executable names
-for exe_name in r0vm zkvm vm; do
-  if [ -x "/dut/bin/$exe_name" ]; then
-    DUT_EXECUTABLE="/dut/bin/$exe_name"
-    break
-  fi
-done
+DUT_EXECUTABLE="/dut/bin/dut-exe"
 
 # If no known executable found, find any executable
 if [ -z "$DUT_EXECUTABLE" ]; then

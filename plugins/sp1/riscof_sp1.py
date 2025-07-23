@@ -38,8 +38,8 @@ class sp1(pluginTemplate):
         # emulator, this variable could point to where the iss binary is located. If 'PATH variable
         # is missing in the config.ini we can hardcode the alternate here.
         
-        # Build path to r0vm executable
-        self.dut_exe = os.path.join(os.path.abspath(config['PATH']), "sp1-perf-executor")
+        # Build path to mounted executable
+        self.dut_exe = os.path.join(os.path.abspath(config['PATH']), "dut-exe")
 
         # Number of parallel jobs that can be spawned off by RISCOF
         # for various actions performed in later functions, specifically to run the tests in
@@ -155,9 +155,10 @@ class sp1(pluginTemplate):
 	  # the "else" clause is executed below assigning the sim command to simple no action
 	  # echo statement.
           if self.target_run:
-            # set up the simulation command. Template is for spike. Please change.
-        # ./target/debug/sp1-perf-executor --program my.elf --stdin empty_stdin.bin --executor-mode simple --signatures my.signatures
-            empty_stdin = '/home/ubuntu/riscof/emulators/sp1/empty_stdin.bin' # TODO: ugh
+                # HACK: we write 24 bytes of zeroes here to represent an empty SP1Stdin. This is obviously brittle. 
+                # Should instead default the if they will accept that.
+            open('empty_stdin.bin', 'wb').write(b'\x00'*24)
+            empty_stdin = os.path.realpath("empty_stdin.bin")
             simcmd = self.dut_exe + ' --signatures {0} --program {1} --stdin {2} --executor-mode simple'.format(sig_file, elf, empty_stdin)
           else:
             simcmd = 'echo "NO RUN"'
