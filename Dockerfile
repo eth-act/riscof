@@ -48,7 +48,7 @@ ENV PATH="/riscof/toolchains/riscv32/bin:/riscof/emulators/sail-riscv:$PATH"
 COPY . .
 
 # Create mount points for DUT binary and plugin
-RUN mkdir -p /dut/bin /dut/plugin && touch /dut/plugin/dut-exe
+RUN mkdir -p /dut/plugin /dut/bin /riscof/riscof_work && touch /dut/plugin/dut-exe
 
 # Default entrypoint will be our dynamic configuration script
-ENTRYPOINT ["/riscof/docker-entrypoint.sh"]
+ENTRYPOINT ["/riscof/entrypoint.sh"]

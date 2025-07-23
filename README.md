@@ -10,13 +10,17 @@ A plugin specifies the particular ISA implemented by the emulator (register size
 
 With these features in hand, we can run the tests with the given emulator as the DUT. For this we build the container with
 ```
-docker build -t riscof-zkvm:latest .
+docker build -t riscof:latest .
 ```
-(or pull it from ...) and run it with the emulator (a file) and plugin (a directory) mounted:
+(or pull it from ...) and run it with the emulator binary directory, plugin directory, and work directory mounted:
 ```
 docker run --rm \
-    -v "<path to emulator>:/dut/bin/dut-exe" \
-    -v "<path to e.g. plugins/emulator-name>:/dut/plugin" \
-    riscof-zkvm:latest
+    -v "$PWD/plugins/<emulator-name>:/dut/plugin" \
+    -v "<path to directory containing emulator binary>:/dut/bin" \
+    -v "$PWD/results:/riscof/riscof_work" \
+    riscof:latest
 ```
 
+The results directory will contain all test results including:
+- `report.html` - The test report summary showing pass/fail results
+- Test binaries, logs, and signature files
