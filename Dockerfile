@@ -18,12 +18,9 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /riscof
 
-# Copy requirements first for better caching
-COPY requirements.txt .
-
 # Install Python dependencies globally (since we're in a container)
 # Ubuntu 24.04 requires --break-system-packages for global pip installs
-RUN pip3 install --break-system-packages -r requirements.txt
+RUN pip3 install --break-system-packages riscof==1.25.3
 
 # Create directories for toolchains and emulators
 RUN mkdir -p toolchains emulators

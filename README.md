@@ -15,8 +15,8 @@ docker build -t riscof-zkvm:latest .
 (or pull it from ...) and run it with the emulator and plugin mounted:
 ```
 docker run --rm \
-    -v "$(pwd)/emulators/risc0/target/debug:/dut/bin" \
-    -v "$(pwd)/plugins/risc0:/dut/plugin" \
+    -v "<path to e.g. target/debug>:/dut/bin" \
+    -v "<path to e.g. plugins/emulator-name>:/dut/plugin" \
     riscof-zkvm:latest
 ```
 
