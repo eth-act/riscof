@@ -6,3 +6,5 @@ emulators/spike
 plugins/sail_cSim/__pycache__
 plugins/spike/__pycache__
 riscof_work
+results/*
+!results/.keep

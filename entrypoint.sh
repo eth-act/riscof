@@ -92,6 +92,12 @@ pluginpath=plugins/sail_cSim
 PATH=/riscof/emulators/sail-riscv/bin/
 EOF
 
+# Clear results directory except .keep file
+if [ -d "/riscof/riscof_work" ]; then
+  echo "Clearing previous results..."
+  find /riscof/riscof_work -mindepth 1 -name .keep -prune -o -exec rm -rf {} + 2>/dev/null || true
+fi
+
 # If command line arguments are provided, run them
 # Otherwise, run the default riscof command
 if [ $# -eq 0 ]; then
