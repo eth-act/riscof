@@ -74,11 +74,9 @@
         .pushsection .tohost,"aw",@progbits;                            \
         .align 8; .global tohost; tohost: .dword 0;                     \
         .align 8; .global fromhost; fromhost: .dword 0;                 \
-        .popsection;                                                    \
-        .align 8; .global begin_regstate; begin_regstate:               \
-        .word 128;                                                      \
-        .align 8; .global end_regstate; end_regstate:                   \
-        .word 4;
+        .align 8; .global begin_regstate; begin_regstate: .word 128;    \
+        .align 8; .global end_regstate; end_regstate: .word 4;          \
+        .popsection;
 
 #define RVMODEL_DATA_BEGIN                                              \
   /* End text section cleanly before starting data */                   \

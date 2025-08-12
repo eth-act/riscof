@@ -86,10 +86,12 @@ ispec=plugins/$PLUGIN_NAME/${PLUGIN_NAME}_isa.yaml
 pspec=plugins/$PLUGIN_NAME/${PLUGIN_NAME}_platform.yaml
 target_run=1
 PATH=/riscof/dut-bin/
+jobs=48
 
 [sail_cSim]
 pluginpath=plugins/sail_cSim
 PATH=/riscof/emulators/sail-riscv/bin/
+jobs=48
 EOF
 
 # Clear results directory except .keep file
@@ -102,7 +104,7 @@ fi
 # Otherwise, run the default riscof command
 if [ $# -eq 0 ]; then
   echo "Running RISCOF tests..."
-  exec riscof run --config=/riscof/config.ini --suite=/riscof/riscv-arch-test/riscv-test-suite/ --env=/riscof/riscv-arch-test/riscv-test-suite/env --no-clean --no-ref-run
+  exec riscof run --config=/riscof/config.ini --suite=/riscof/riscv-arch-test/riscv-test-suite/ --env=/riscof/riscv-arch-test/riscv-test-suite/env --no-clean
 else
   exec "$@"
 fi
