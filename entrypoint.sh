@@ -102,7 +102,7 @@ fi
 # Otherwise, run the default riscof command
 if [ $# -eq 0 ]; then
   echo "Running RISCOF tests..."
-  exec riscof run --config=/riscof/config.ini --suite=/riscof/riscv-arch-test/riscv-test-suite/ --env=/riscof/riscv-arch-test/riscv-test-suite/env --no-clean
+  exec riscof run --config=/riscof/config.ini --suite=/riscof/riscv-arch-test/riscv-test-suite/ --env=/riscof/riscv-arch-test/riscv-test-suite/env --no-clean --no-ref-run
 else
   exec "$@"
 fi
