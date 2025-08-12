@@ -150,8 +150,12 @@ class openvm(pluginTemplate):
           # the "else" clause is executed below assigning the sim command to simple no action
           # echo statement.
           if self.target_run:
-              # Should not reach here with --no-dut-run
-              simcmd = 'echo "ERROR: target_run should be False"'
+              # Run the test using cargo-openvm with the --elf flag
+              # cargo-openvm is available at self.dut_exe
+              # Touch openvm.toml to avoid the warning, then run
+              # Also handle potential failures gracefully
+              simcmd = 'touch openvm.toml; {0} openvm run --elf {1} --signatures {2} 2>&1 | tail -5 > openvm.log || true'.format(
+                  self.dut_exe, elf, sig_file)
           else:
               # Create dummy signature file for RISCOF when not running
               simcmd = 'echo "Tests compiled but not run (--no-dut-run)" > {0}'.format(sig_file)
@@ -173,5 +177,4 @@ class openvm(pluginTemplate):
 
       # if target runs are not required then we simply exit as this point after running all
       # the makefile targets.
-      if not self.target_run:
-          raise SystemExit(0)
+      # (Removed the SystemExit since we now support target_run)
