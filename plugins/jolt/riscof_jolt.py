@@ -69,7 +69,7 @@ class jolt(pluginTemplate):
         self.archtest_env = archtest_env
         
         # Standard GCC compilation command
-        self.compile_cmd = 'riscv{1}-unknown-elf-gcc -march={0} \
+        self.compile_cmd = 'riscv64-unknown-elf-gcc -march={0} \
             -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -g\
             -T '+self.pluginpath+'/env/link.ld\
             -I '+self.pluginpath+'/env/\
@@ -91,7 +91,7 @@ class jolt(pluginTemplate):
         
         # Set ABI based on XLEN
         abi = 'lp64' if 64 in ispec['supported_xlen'] else 'ilp32'
-        self.compile_cmd = self.compile_cmd + ' -mabi=' + abi + ' {2} -o {3} {4}'
+        self.compile_cmd = self.compile_cmd + ' -mabi=' + abi + ' {1} -o {2} {3}'
     
     def runTests(self, testList):
         # Delete existing Makefile if it exists
@@ -126,8 +126,8 @@ class jolt(pluginTemplate):
             compile_macros = ' -D' + " -D".join(testentry['macros'])
             
             # Substitute variables in compile command
-            # Format: {0}=march, {1}=xlen, {2}=input_test, {3}=output_elf, {4}=compile_macros
-            cmd = self.compile_cmd.format(testentry['isa'].lower(), self.xlen, test, elf, compile_macros)
+            # Format: {0}=march, {1}=xlen, {1}=input_test, {2}=output_elf, {3}=compile_macros
+            cmd = self.compile_cmd.format(testentry['isa'].lower(), test, elf, compile_macros)
             
             # Set up simulation/execution command based on target_run
             if self.target_run:

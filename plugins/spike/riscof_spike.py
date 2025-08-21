@@ -72,11 +72,11 @@ class spike(pluginTemplate):
        # Note the march is not hardwired here, because it will change for each
        # test. Similarly the output elf name and compile macros will be assigned later in the
        # runTests function
-       self.compile_cmd = 'riscv{1}-unknown-elf-gcc -march={0} \
+       self.compile_cmd = 'riscv64-unknown-elf-gcc -march={0} \
          -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -g\
          -T '+self.pluginpath+'/env/link.ld\
          -I '+self.pluginpath+'/env/\
-         -I ' + archtest_env + ' {2} -o {3} {4}'
+         -I ' + archtest_env + ' {1} -o {2} {3}'
 
        # add more utility snippets here
 
@@ -148,7 +148,7 @@ class spike(pluginTemplate):
 
           # substitute all variables in the compile command that we created in the initialize
           # function
-          cmd = self.compile_cmd.format(testentry['isa'].lower(), self.xlen, test, elf, compile_macros)
+          cmd = self.compile_cmd.format(testentry['isa'].lower(), test, elf, compile_macros)
 
 	  # if the user wants to disable running the tests and only compile the tests, then
 	  # the "else" clause is executed below assigning the sim command to simple no action
@@ -160,7 +160,7 @@ class spike(pluginTemplate):
             simcmd = 'echo "NO RUN"'
 
           # concatenate all commands that need to be executed within a make-target.
-          execute = '@cd {0}; {1}; {2};'.format(testentry['work_dir'], cmd, simcmd)
+          execute = \'@cd {0}; {1}; {2};'.format(testentry['work_dir'], cmd, simcmd)
 
           # create a target. The makeutil will create a target with the name "TARGET<num>" where num
           # starts from 0 and increments automatically for each new target that is added
@@ -216,7 +216,7 @@ class spike(pluginTemplate):
 #
 #          # substitute all variables in the compile command that we created in the initialize
 #          # function
-#          cmd = self.compile_cmd.format(marchstr, self.xlen, test, elf, compile_macros)
+#          cmd = self.compile_cmd.format(marchstr, test, elf, compile_macros)
 #
 #          # just a simple logger statement that shows up on the terminal
 #          logger.debug('Compiling test: ' + test)
@@ -234,7 +234,7 @@ class spike(pluginTemplate):
 #            # build the command for running the elf on the DUT. In this case we use spike and indicate
 #            # the isa arg that we parsed in the build stage, elf filename and signature filename.
 #            # Template is for spike. Please change for your DUT
-#            execute = self.dut_exe + ' --isa={0} +signature={1} +signature-granularity=4 {2}'.format(self.isa, sig_file, elf)
+#            execute = self.dut_exe + ' --isa={0} +signature={1} +signature-granularity=4 {1}'.format(self.isa, sig_file, elf)
 #            logger.debug('Executing on Spike ' + execute)
 #
 #          # launch the execute command. Change the test_dir if required.
