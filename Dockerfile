@@ -53,5 +53,20 @@ COPY . .
 # Create mount points for DUT binary and plugin
 RUN mkdir -p /dut/plugin /dut/bin /riscof/riscof_work && touch /dut/plugin/dut-exe
 
+# Accept git commit hash as build argument (passed during docker build)
+ARG RISCOF_COMMIT=unknown
+
+# Store commit hash as environment variable for runtime access
+ENV RISCOF_COMMIT=${RISCOF_COMMIT}
+
+# Create a VERSION file with all version information
+RUN echo "{" > /riscof/VERSION.json && \
+    echo "  \"riscof_commit\": \"${RISCOF_COMMIT}\"," >> /riscof/VERSION.json && \
+    echo "  \"riscof_version\": \"1.25.3\"," >> /riscof/VERSION.json && \
+    echo "  \"toolchain_version\": \"${RISCV_TOOLCHAIN_VERSION}\"," >> /riscof/VERSION.json && \
+    echo "  \"toolchain_type\": \"riscv64-elf-ubuntu-24.04\"," >> /riscof/VERSION.json && \
+    echo "  \"base_image\": \"ubuntu:24.04\"" >> /riscof/VERSION.json && \
+    echo "}" >> /riscof/VERSION.json
+
 # Default entrypoint will be our dynamic configuration script
 ENTRYPOINT ["/riscof/entrypoint.sh"]
