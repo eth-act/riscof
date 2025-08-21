@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
   curl \
   git \
   build-essential \
+  xz-utils \
   zsh \
   vim \
   && rm -rf /var/lib/apt/lists/*
@@ -25,18 +26,12 @@ RUN pip3 install --break-system-packages riscof==1.25.3
 # Create directories for toolchains and emulators
 RUN mkdir -p toolchains emulators
 
-# Build RISC-V toolchain from source without compressed instructions support
-# This is necessary because pre-built toolchains include RVC support which causes issues with ziskemu
-RUN apt-get update && apt-get install -y \
-    autoconf automake autotools-dev curl python3 python3-pip libmpc-dev \
-    libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo \
-    gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build \
-    git cmake libglib2.0-dev libslirp-dev && \
-    git clone --depth 1 --branch 2024.02.02 https://github.com/riscv/riscv-gnu-toolchain && \
-    cd riscv-gnu-toolchain && \
-    ./configure --prefix=/riscof/toolchains/riscv64 --with-arch=rv64ima --with-abi=lp64 && \
-    make -j$(nproc) && \
-    cd .. && rm -rf riscv-gnu-toolchain
+ENV RISCV_TOOLCHAIN_VERSION=2025.08.08
+RUN curl -L https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/${RISCV_TOOLCHAIN_VERSION}/riscv64-elf-ubuntu-24.04-gcc-nightly-${RISCV_TOOLCHAIN_VERSION}-nightly.tar.xz | \
+  tar -xJ -C /riscof/toolchains/
+
+# Rename to expected directory name
+RUN mv /riscof/toolchains/riscv /riscof/toolchains/riscv64
 
 # Install Sail RISC-V simulator (the golden reference model)
 RUN curl -L https://github.com/riscv/sail-riscv/releases/download/0.7/sail_riscv-Linux-x86_64.tar.gz | tar -xz -C emulators/ && \
