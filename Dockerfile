@@ -25,10 +25,18 @@ RUN pip3 install --break-system-packages riscof==1.25.3
 # Create directories for toolchains and emulators
 RUN mkdir -p toolchains emulators
 
-# Install generic RISC-V toolchain (riscv32-unknown-elf)
-# Using the official RISC-V GNU toolchain releases
-RUN curl -L https://github.com/riscv-collab/riscv-gnu-toolchain/releases/download/2024.02.02/riscv32-elf-ubuntu-22.04-gcc-nightly-2024.02.02-nightly.tar.gz | tar -xz -C toolchains/ && \
-  mv toolchains/riscv toolchains/riscv32
+# Build RISC-V toolchain from source without compressed instructions support
+# This is necessary because pre-built toolchains include RVC support which causes issues with ziskemu
+RUN apt-get update && apt-get install -y \
+    autoconf automake autotools-dev curl python3 python3-pip libmpc-dev \
+    libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo \
+    gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build \
+    git cmake libglib2.0-dev libslirp-dev && \
+    git clone --depth 1 --branch 2024.02.02 https://github.com/riscv/riscv-gnu-toolchain && \
+    cd riscv-gnu-toolchain && \
+    ./configure --prefix=/riscof/toolchains/riscv64 --with-arch=rv64ima --with-abi=lp64 && \
+    make -j$(nproc) && \
+    cd .. && rm -rf riscv-gnu-toolchain
 
 # Install Sail RISC-V simulator (the golden reference model)
 RUN curl -L https://github.com/riscv/sail-riscv/releases/download/0.7/sail_riscv-Linux-x86_64.tar.gz | tar -xz -C emulators/ && \
@@ -42,7 +50,7 @@ RUN sed -i 's/if key not in list:/if key not in flist:/' /usr/local/lib/python3.
   sed -i '/def check_commit/,/return str(commit), update/{s/if (str(commit) != old_commit):/update = False\n    if (str(commit) != old_commit):/}' /usr/local/lib/python3.12/dist-packages/riscof/dbgen.py
 
 # Add toolchains and emulators to PATH
-ENV PATH="/riscof/toolchains/riscv32/bin:/riscof/emulators/sail-riscv:$PATH"
+ENV PATH="/riscof/toolchains/riscv64/bin:/riscof/emulators/sail-riscv:$PATH"
 
 # Copy the entire project (excluding what's in .dockerignore)
 COPY . .

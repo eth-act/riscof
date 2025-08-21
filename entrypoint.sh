@@ -60,7 +60,7 @@ cp -r /dut/plugin/* "/riscof/plugins/$PLUGIN_NAME/"
 
 # Create __init__.py files to make proper Python packages
 touch "/riscof/plugins/__init__.py"
-cat >"/riscof/plugins/$PLUGIN_NAME/__init__.py" <<'EOF'
+cat > "/riscof/plugins/$PLUGIN_NAME/__init__.py" << 'EOF'
 from pkgutil import extend_path
 __path__ = extend_path(__path__, __name__)
 EOF
@@ -69,11 +69,11 @@ EOF
 mkdir -p /riscof/dut-bin
 cp "$DUT_EXECUTABLE" "/riscof/dut-bin/"
 chmod +x "/riscof/dut-bin/$DUT_NAME"
-export PATH="/riscof/dut-bin:$PATH"
+export PATH="/riscof/dut-bin:/riscof/toolchains/riscv64/bin:/riscof/emulators/sail-riscv:$PATH"
 
 # Generate config.ini dynamically
 echo "Generating config.ini for $PLUGIN_NAME..."
-cat >/riscof/config.ini <<EOF
+cat > /riscof/config.ini << EOF
 [RISCOF]
 ReferencePlugin=sail_cSim
 ReferencePluginPath=plugins/sail_cSim
@@ -97,7 +97,7 @@ EOF
 # Clear results directory except .keep file
 if [ -d "/riscof/riscof_work" ]; then
   echo "Clearing previous results..."
-  find /riscof/riscof_work -mindepth 1 -name .keep -prune -o -exec rm -rf {} + 2>/dev/null || true
+  find /riscof/riscof_work -mindepth 1 -name .keep -prune -o -exec rm -rf {} + 2> /dev/null || true
 fi
 
 # If command line arguments are provided, run them
