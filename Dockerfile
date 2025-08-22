@@ -41,8 +41,10 @@ RUN curl -L https://github.com/riscv/sail-riscv/releases/download/0.7/sail_riscv
 RUN riscof arch-test --clone --get-version 3.9.1
 
 # Fix RISCOF bugs in dbgen.py
-RUN sed -i 's/if key not in list:/if key not in flist:/' /usr/local/lib/python3.12/dist-packages/riscof/dbgen.py && \
-  sed -i '/def check_commit/,/return str(commit), update/{s/if (str(commit) != old_commit):/update = False\n    if (str(commit) != old_commit):/}' /usr/local/lib/python3.12/dist-packages/riscof/dbgen.py
+# Note: Python path changes with Ubuntu 22.04 (Python 3.10)
+RUN PYTHON_SITE_PACKAGES=$(python3 -c "import site; print(site.getsitepackages()[0])") && \
+  sed -i 's/if key not in list:/if key not in flist:/' "$PYTHON_SITE_PACKAGES/riscof/dbgen.py" && \
+  sed -i '/def check_commit/,/return str(commit), update/{s/if (str(commit) != old_commit):/update = False\n    if (str(commit) != old_commit):/}' "$PYTHON_SITE_PACKAGES/riscof/dbgen.py"
 
 # Add toolchains and emulators to PATH
 ENV PATH="/riscof/toolchains/riscv64/bin:/riscof/emulators/sail-riscv:$PATH"

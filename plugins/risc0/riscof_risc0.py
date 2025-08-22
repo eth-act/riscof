@@ -33,21 +33,21 @@ class risc0(pluginTemplate):
             print("Please enter input file paths in configuration.")
             raise SystemExit(1)
 
+        # Path to the directory where this python file is located. Collect it from the config.ini
+        self.pluginpath=os.path.abspath(config['pluginpath'])
+        
         # In case of an RTL based DUT, this would be point to the final binary executable of your
         # test-bench produced by a simulator (like verilator, vcs, incisive, etc). In case of an iss or
         # emulator, this variable could point to where the iss binary is located. If 'PATH variable
         # is missing in the config.ini we can hardcode the alternate here.
         
-        # Build path to executable
-        self.dut_exe = os.path.join(os.path.abspath(config['PATH']), "dut-exe")
+        # Build path to executable - RISC0 binary is mounted at /dut/bin/dut-exe
+        self.dut_exe = "/dut/bin/dut-exe"
 
         # Number of parallel jobs that can be spawned off by RISCOF
         # for various actions performed in later functions, specifically to run the tests in
         # parallel on the DUT executable. Can also be used in the build function if required.
         self.num_jobs = str(config['jobs'] if 'jobs' in config else 1)
-
-        # Path to the directory where this python file is located. Collect it from the config.ini
-        self.pluginpath=os.path.abspath(config['pluginpath'])
 
         # Collect the paths to the  riscv-config absed ISA and platform yaml files. One can choose
         # to hardcode these here itself instead of picking it from the config.ini file.
@@ -75,6 +75,7 @@ class risc0(pluginTemplate):
        # Note the march is not hardwired here, because it will change for each
        # test. Similarly the output elf name and compile macros will be assigned later in the
        # runTests function
+       # RISC0 uses RV32 but we always use riscv64 toolchain
        self.compile_cmd = 'riscv64-unknown-elf-gcc -march={0} \
          -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -g\
          -T '+self.pluginpath+'/env/link.ld\
@@ -106,7 +107,8 @@ class risc0(pluginTemplate):
       if "C" in ispec["ISA"]:
           self.isa += 'c'
 
-      self.compile_cmd = self.compile_cmd+' -mabi='+('lp64 ' if 64 in ispec['supported_xlen'] else 'ilp32 ')
+      # RISC0 is RV32, so always use ilp32 ABI
+      self.compile_cmd = self.compile_cmd+' -mabi=ilp32 '
 
     def runTests(self, testList):
 
@@ -161,7 +163,7 @@ class risc0(pluginTemplate):
             simcmd = 'echo "NO RUN"'
 
           # concatenate all commands that need to be executed within a make-target.
-          execute = \'@cd {0}; {1}; {2};'.format(testentry['work_dir'], cmd, simcmd)
+          execute = '@cd {0}; {1}; {2};'.format(testentry['work_dir'], cmd, simcmd)
 
           # create a target. The makeutil will create a target with the name "TARGET<num>" where num
           # starts from 0 and increments automatically for each new target that is added
