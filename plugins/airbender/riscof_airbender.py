@@ -16,9 +16,11 @@ from riscof.pluginTemplate import pluginTemplate
 
 logger = logging.getLogger()
 
-class openvm(pluginTemplate):
-    __model__ = "openvm"
-    __version__ = "1.0.0"
+class airbender(pluginTemplate):
+    __model__ = "airbender"
+
+    #TODO: please update the below to indicate family, version, etc of your DUT.
+    __version__ = "XXX"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -31,16 +33,18 @@ class openvm(pluginTemplate):
             print("Please enter input file paths in configuration.")
             raise SystemExit(1)
 
-        # Build path to executable
+        # Path to the directory where this python file is located. Collect it from the config.ini
+        self.pluginpath=os.path.abspath(config['pluginpath'])
+        
+        # Path to the mounted binary - dut-exe is mounted at runtime by the test harness
+        # The binary is expected to be at config['PATH']/dut-exe inside the Docker container
         self.dut_exe = os.path.join(os.path.abspath(config['PATH']), "dut-exe")
+        self.airbender_cli = self.dut_exe
 
         # Number of parallel jobs that can be spawned off by RISCOF
         # for various actions performed in later functions, specifically to run the tests in
         # parallel on the DUT executable. Can also be used in the build function if required.
         self.num_jobs = str(config['jobs'] if 'jobs' in config else 1)
-
-        # Path to the directory where this python file is located. Collect it from the config.ini
-        self.pluginpath=os.path.abspath(config['pluginpath'])
 
         # Collect the paths to the  riscv-config absed ISA and platform yaml files. One can choose
         # to hardcode these here itself instead of picking it from the config.ini file.
@@ -50,11 +54,10 @@ class openvm(pluginTemplate):
         #We capture if the user would like the run the tests on the target or
         #not. If you are interested in just compiling the tests and not running
         #them on the target, then following variable should be set to False
-        # Default to False since we use --no-dut-run in entrypoint.sh
-        if 'target_run' in config and config['target_run']=='1':
-            self.target_run = True
-        else:
+        if 'target_run' in config and config['target_run']=='0':
             self.target_run = False
+        else:
+            self.target_run = True
 
     def initialise(self, suite, work_dir, archtest_env):
 
@@ -66,9 +69,7 @@ class openvm(pluginTemplate):
        # capture the architectural test-suite directory.
        self.suite_dir = suite
 
-       # Note the march is not hardwired here, because it will change for each
-       # test. Similarly the output elf name and compile macros will be assigned later in the
-       # runTests function
+       # Airbender is RV32IM only. We use riscv64 toolchain but compile for 32-bit targets with -mabi=ilp32
        self.compile_cmd = 'riscv64-unknown-elf-gcc -march={0}\
          -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -g -mno-relax\
          -Wa,-march={0}\
@@ -87,7 +88,7 @@ class openvm(pluginTemplate):
       # will be useful in setting integer value in the compiler string (if not already hardcoded);
       self.xlen = ('64' if 64 in ispec['supported_xlen'] else '32')
 
-      # for openvm start building the '--isa' argument. the self.isa is dutnmae specific and may not be
+      # for airbender start building the '--isa' argument. the self.isa is dut-name specific and may not be
       # useful for all DUTs
       self.isa = 'rv' + self.xlen
       if "I" in ispec["ISA"]:
@@ -101,7 +102,8 @@ class openvm(pluginTemplate):
       if "C" in ispec["ISA"]:
           self.isa += 'c'
 
-      self.compile_cmd = self.compile_cmd+' -mabi='+('lp64 ' if 64 in ispec['supported_xlen'] else 'ilp32 ')
+      # Airbender is RV32, so always use ilp32 ABI
+      self.compile_cmd = self.compile_cmd+' -mabi=ilp32 '
 
     def runTests(self, testList):
 
@@ -144,22 +146,26 @@ class openvm(pluginTemplate):
 
           # substitute all variables in the compile command that we created in the initialize
           # function
-          cmd = self.compile_cmd.format(testentry['isa'].lower(), test, elf, compile_macros)
-          # print(f'build command is {cmd}')
+          cmd = self.compile_cmd.format('rv32im', test, elf, compile_macros)
 
-          # if the user wants to disable running the tests and only compile the tests, then
-          # the "else" clause is executed below assigning the sim command to simple no action
-          # echo statement.
+	  # if the user wants to disable running the tests and only compile the tests, then
+	  # the "else" clause is executed below assigning the sim command to simple no action
+	  # echo statement.
           if self.target_run:
-              # Run the test using cargo-openvm with the --elf flag
-              # cargo-openvm is available at self.dut_exe
-              # Touch openvm.toml to avoid the warning, then run
-              # Ensure a signature file exists even if OpenVM panics
-              simcmd = 'touch openvm.toml; ({0} openvm run --elf {1} --signatures {2} || echo "PANIC" > {2}) 2>&1 | tail -5 > openvm.log'.format(
-                  self.dut_exe, elf, sig_file)
+            # Convert ELF to binary format that Airbender expects
+            bin_file = os.path.join(testentry['work_dir'], 'my.bin')
+            objcopy_cmd = 'riscv64-unknown-elf-objcopy -O binary {0} {1}'.format(elf, bin_file)
+            
+            # Run Airbender with the binary file and ensure a signature file exists even if it panics
+            # This allows RISCOF to complete and show which tests failed
+            # We add --cycles 100000 to limit execution (tests will infinite loop on completion)
+            # Pass both binary and ELF - binary for execution, ELF for signature extraction
+            # Touch the signature file first to ensure it exists with proper permissions
+            # Then run Airbender which will overwrite it if successful
+            simcmd = '{0} && touch {4} && {1} run --bin {2} --elf {3} --signatures {4} --cycles 100000 2>&1 | tail -10 > airbender.log'.format(
+                objcopy_cmd, self.airbender_cli, bin_file, elf, sig_file)
           else:
-              # Create dummy signature file for RISCOF when not running
-              simcmd = 'echo "Tests compiled but not run (--no-dut-run)" > {0}'.format(sig_file)
+            simcmd = 'echo "NO RUN"'
 
           # concatenate all commands that need to be executed within a make-target.
           execute = '@cd {0}; {1}; {2};'.format(testentry['work_dir'], cmd, simcmd)
@@ -178,4 +184,5 @@ class openvm(pluginTemplate):
 
       # if target runs are not required then we simply exit as this point after running all
       # the makefile targets.
-      # (Removed the SystemExit since we now support target_run)
+      if not self.target_run:
+          raise SystemExit(0)

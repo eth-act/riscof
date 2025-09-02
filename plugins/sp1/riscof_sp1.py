@@ -75,8 +75,9 @@ class sp1(pluginTemplate):
        # Note the march is not hardwired here, because it will change for each
        # test. Similarly the output elf name and compile macros will be assigned later in the
        # runTests function
-       self.compile_cmd = 'riscv64-unknown-elf-gcc -march={0} \
-         -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -g\
+       self.compile_cmd = 'riscv64-unknown-elf-gcc -march={0}\
+         -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -g -mno-relax\
+         -Wa,-march={0}\
          -T '+self.pluginpath+'/env/link.ld\
          -I '+self.pluginpath+'/env/\
          -I ' + archtest_env + ' {1} -o {2} {3}'
@@ -159,12 +160,14 @@ class sp1(pluginTemplate):
                 # Should instead default the if they will accept that.
             open('empty_stdin.bin', 'wb').write(b'\x00'*24)
             empty_stdin = os.path.realpath("empty_stdin.bin")
-            simcmd = self.dut_exe + ' --signatures {0} --program {1} --stdin {2} --executor-mode simple'.format(sig_file, elf, empty_stdin)
+            # Ensure a signature file exists even if SP1 panics
+            simcmd = '({0} --signatures {1} --program {2} --stdin {3} --executor-mode simple || echo "PANIC" > {1}) 2>&1 | tail -10 > sp1.log'.format(
+                self.dut_exe, sig_file, elf, empty_stdin)
           else:
             simcmd = 'echo "NO RUN"'
 
           # concatenate all commands that need to be executed within a make-target.
-          execute = \'@cd {0}; {1}; {2};'.format(testentry['work_dir'], cmd, simcmd)
+          execute = '@cd {0}; {1}; {2};'.format(testentry['work_dir'], cmd, simcmd)
 
           # create a target. The makeutil will create a target with the name "TARGET<num>" where num
           # starts from 0 and increments automatically for each new target that is added

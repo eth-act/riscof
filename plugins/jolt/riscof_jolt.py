@@ -132,8 +132,8 @@ class jolt(pluginTemplate):
             # Set up simulation/execution command based on target_run
             if self.target_run:
                 # Run jolt-emu with signature extraction
-                # Capture all output for debugging
-                simcmd = '{0} {1} --signature {2} --signature-granularity 4 > jolt.log 2>&1 || true'.format(
+                # Ensure a signature file exists even if Jolt panics
+                simcmd = '({0} {1} --signature {2} --signature-granularity 4 || echo "PANIC" > {2}) > jolt.log 2>&1'.format(
                     self.dut_exe, elf, sig_file)
             else:
                 # Create dummy signature when not running tests

@@ -72,12 +72,11 @@ class risc0(pluginTemplate):
        # capture the architectural test-suite directory.
        self.suite_dir = suite
 
-       # Note the march is not hardwired here, because it will change for each
-       # test. Similarly the output elf name and compile macros will be assigned later in the
-       # runTests function
-       # RISC0 uses RV32 but we always use riscv64 toolchain
-       self.compile_cmd = 'riscv64-unknown-elf-gcc -march={0} \
-         -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -g\
+       # RISC0 is RV32IM only. We hardcode rv32im in runTests() regardless of test ISA.
+       # We use riscv64 toolchain but compile for 32-bit targets with -mabi=ilp32
+       self.compile_cmd = 'riscv64-unknown-elf-gcc -march={0}\
+         -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles -g -mno-relax\
+         -Wa,-march={0}\
          -T '+self.pluginpath+'/env/link.ld\
          -I '+self.pluginpath+'/env/\
          -I ' + archtest_env + ' {1} -o {2} {3}'
@@ -151,14 +150,16 @@ class risc0(pluginTemplate):
 
           # substitute all variables in the compile command that we created in the initialize
           # function
-          cmd = self.compile_cmd.format(testentry['isa'].lower(), test, elf, compile_macros)
+          cmd = self.compile_cmd.format('rv32im', test, elf, compile_macros)
 
 	  # if the user wants to disable running the tests and only compile the tests, then
 	  # the "else" clause is executed below assigning the sim command to simple no action
 	  # echo statement.
           if self.target_run:
-            # set up the simulation command. Template is for spike. Please change.
-            simcmd = self.dut_exe + ' --signatures {0} --test-elf {1}'.format(sig_file, elf)
+            # Run RISC0 and ensure a signature file exists even if it panics
+            # This allows RISCOF to complete and show which tests failed
+            simcmd = '({0} --signatures {1} --test-elf {2} || echo "PANIC" > {1}) 2>&1 | tail -10 > risc0.log'.format(
+                self.dut_exe, sig_file, elf)
           else:
             simcmd = 'echo "NO RUN"'
 

@@ -161,9 +161,9 @@ class zisk(pluginTemplate):
 	  # the "else" clause is executed below assigning the sim command to simple no action
 	  # echo statement.
           if self.target_run:
-            # set up the simulation command. Template is for spike. Please change.
-            # simcmd = self.dut_exe + ' --isa={0} +signature={1} +signature-granularity=4 {2}'.format(self.isa, sig_file, elf)
-            simcmd = self.dut_exe + ' -e {2} >{1}'.format(self.isa, sig_file, elf)
+            # Run Zisk and ensure a signature file exists even if it panics
+            simcmd = '({0} -e {2} >{1} || echo "PANIC" > {1}) 2>&1 | tail -10 > zisk.log'.format(
+                self.dut_exe, sig_file, elf)
           else:
             simcmd = 'echo "NO RUN"'
 
